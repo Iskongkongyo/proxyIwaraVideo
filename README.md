@@ -10,4 +10,5 @@
 
 ## 示例网站：
 
-https://ss.iys.pp.ua、https://ss.ixq.pp.ua
+https://ss.iys.pp.ua
+https://ss.ixq.pp.ua
