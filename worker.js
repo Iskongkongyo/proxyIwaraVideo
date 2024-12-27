@@ -7,6 +7,8 @@ const html = `<!DOCTYPE HTML>
        <title>在线Iwara视频播放网站</title>
        <meta name="description" content="一款免费在线Iwara视频播放网站" />
        <meta name="keyword" content="免费、在线视频、Iwara、视频" />
+       <link rel="icon" href="https://files.catbox.moe/n8mogj.png"/>
+       <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
        <style type="text/css">
          * {
            margin: 0;
@@ -24,6 +26,7 @@ const html = `<!DOCTYPE HTML>
          html,
          body {
            background: #fff;
+           padding-bottom: 60px;
          }
    
          #iframeContainer {
@@ -35,7 +38,7 @@ const html = `<!DOCTYPE HTML>
            left: 0;
            width: 100%;
            height: 100%;
-           background-color: rgba(0, 0, 0, 0.5); 
+           background-color: rgba(0, 0, 0, 1); 
            z-index: 1000; 
          }
    
@@ -101,7 +104,7 @@ const html = `<!DOCTYPE HTML>
          }
    
          .wrap .link-area .form {
-           width: 320px;
+           width: 220px;
            height: 32px;
            line-height: 32px;
            padding: 0 10px;
@@ -119,7 +122,7 @@ const html = `<!DOCTYPE HTML>
          .wrap .link-area #submit {
            width: 90px;
            height: 38px;
-           margin: 0 0 0 5px;
+           margin: 0 0 0 10px;
            background: #ff4665;
            border-radius: 5px;
            color: #fff;
@@ -131,8 +134,32 @@ const html = `<!DOCTYPE HTML>
          .wrap .link-area #hot {
           width: 90px;
           height: 38px;
-          margin: 0 0 0 5px;
+          margin: 0 0 0 10px;
           background: #3AB54A;
+          border-radius: 5px;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          transition: .2s opacity ease;
+        }
+
+        .wrap .link-area #save {
+          width: 90px;
+          height: 38px;
+          margin: 0 0 0 10px;
+          background: #CCCC00;
+          border-radius: 5px;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          transition: .2s opacity ease;
+        }
+        
+        .wrap .link-area #share {
+          width: 90px;
+          height: 38px;
+          margin: 0 0 0 10px;
+          background: #33ccff;
           border-radius: 5px;
           color: #fff;
           border: none;
@@ -149,21 +176,49 @@ const html = `<!DOCTYPE HTML>
          }
 
          .wrap .footer {
-          width: 100%;
-          bottom: 80px;
+          width:100%; 
+          bottom: 40px;  
           left: 0;
           position: fixed;
           color: #7e7e7e;
+          padding: 10px;
+          text-align: center;  
         }
   
         .wrap .footer a {
           color: #ff4665;
         }
 
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          table-layout: fixed;
+      }
+
+      th:first-child, td:first-child {
+        width: 65%;
+        word-wrap: break-word;
+    }
+      
+      th, td {
+          padding: 15px;
+          text-align: left; 
+          border: 1px solid #ccc;
+      }
+      
+      th {
+          background-color: #f2f2f2;
+      }
+      
+      tr:hover {
+          background-color: #f1f1f1;
+      }
+
         select{
-           width: 80px;
-           height: 35px;
-           line-height: 32px;
+           width: 85px;
+           height: 37px;
+           line-height: 37px;
            padding: 0 10px;
            border: 3px solid #bdc3c7;
            border-radius: 5px;
@@ -175,14 +230,28 @@ const html = `<!DOCTYPE HTML>
      <body>
        <div id="iframeContainer">
          <!-- 使用 video 元素来加载视频 -->
+         <button id="saveButton" style="position: absolute; top: 10px; right: 120px; z-index: 1001; background-color: #CCCC00; color: white; border: none; padding: 5px 10px; cursor: pointer;">收藏</button>
          <button id="downButton" style="position: absolute; top: 10px; right: 65px; z-index: 1001; background-color: #87ceeb; color: white; border: none; padding: 5px 10px; cursor: pointer;">下载</button>
          <button id="closeButton" style="position: absolute; top: 10px; right: 10px; z-index: 1001; background-color: red; color: white; border: none; padding: 5px 10px; cursor: pointer;">关闭</button>
-         <video id="myVideo" controls>
+         <video id="myVideo" controls autoplay>
            <source class="videoSource" src="" type="video/mp4" />
            <source class="videoSource" src="" type="video/webm">
            <source class="videoSource" src="" type="video/ogg">
            您的浏览器不支持视频播放。
          </video>
+       </div>
+
+       <div id="saveVideos" style="display:none">
+       <table id="data-table">
+        <thead>
+            <tr>
+                <th>视频名称</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+       </table>
        </div>
    
        <div class="wrap">
@@ -191,7 +260,7 @@ const html = `<!DOCTYPE HTML>
            <h3 class="description">一款免费在线Iwara视频播放网站</h3>
          </div>
          <div class="link-area">
-           <input id="video" class="form" type="text" placeholder="填写视频ID，如：Hvfo6PVnB9mnsD" />
+           <input id="video" class="form" type="text" placeholder="填写视频ID或粘贴视频链接！" />
            <select>
            <option value="Source">原视频</option>
            <option value="360">360P</option>
@@ -199,21 +268,54 @@ const html = `<!DOCTYPE HTML>
            </select>
            <input id="submit" type="button" value="播放视频" />
            <input id="hot" type="button" value="随机热门" />
+           <input id="save" type="button" value="打开收藏" />
+           <input id="share" type="button" value="分享视频" />
          </div>
          <div class="footer">
            Copyright &copy; 权限- All Rights Reserved
            <p>
-             <a href="/" target="_blank" style="text-decoration:none;">跳转链接</a>
+             <a href="/" target="_self" style="text-decoration:none;">跳转链接</a>
            </p>
          </div>
        </div>
    
        <script type="text/javascript">
-       let videoPlayUrl,videoName,videoQuality,idValue;
+       let videoPlayUrl,videoName,videoQuality,idValue,playId;
        // 获取id参数值
         idValue = (new URLSearchParams(location.search)).get('id');
         // 获取视频质量, 默认540p
         videoQuality = (new URLSearchParams(location.search)).get('quality') || '540';
+
+        // 获取关闭按钮和 iframeContainer
+        const iframeContainer = document.querySelector('#iframeContainer');
+        const videoElement = document.querySelector('#myVideo');
+
+        let listener1 = setInterval(()=>{videoElement.pause();},300);
+
+        swal({
+            title:'温馨提示',
+            text:'本网站免费提供I站(Iwara)视频播放和下载服务！使用前请遵守当地法律法规！如果您能访问I站，强烈建议到I站官网观看更多精彩视频！是否跳转I站官网？',
+            buttons:{
+              cancel: {
+                text: "暂不跳转",
+                value: false,
+                visible: true
+              },
+              confirm: {
+                text: "跳转I站",
+                value: true,
+                visible: true
+              }
+            }
+          }).then((value) => {
+             clearInterval(listener1);
+              if (value) {
+                  let shareId = (new URL(location.href)).searchParams.get('id');
+                  shareId ? location.replace('https://www.iwara.tv/video/'+shareId) : location.replace('https://www.iwara.tv');
+              }else{
+              videoElement.play();
+            }
+            });
 
        document.addEventListener('DOMContentLoaded', () => {
         setTimeout(function() {
@@ -223,41 +325,70 @@ const html = `<!DOCTYPE HTML>
       
         if (idValue) {
           document.querySelector('#video').value = idValue;
-          skip(0);
+          document.querySelector('select').value = videoQuality;
+          skip();
         }
       });
       
       // 回车监听事件
       document.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
-          skip(1);
+          skip();
         }
       });
       
-      document.querySelector('#submit').addEventListener('click', ()=>{skip(1);});
+      document.querySelector('#submit').addEventListener('click', skip);
 
       document.querySelector('#hot').addEventListener('click', getHots);
-      
-      // 获取关闭按钮和 iframeContainer
-      const closeButton = document.querySelector('#closeButton');
-      const downButton = document.querySelector('#downButton');
-      const iframeContainer = document.querySelector('#iframeContainer');
-      const videoElement = document.querySelector('#myVideo');
+
+      document.querySelector('#share').addEventListener('click', copyLinkToClipboard);
+
+      document.querySelector('#save').addEventListener('click', ()=>{getSaveVideos(JSON.parse(localStorage.getItem('save')));});
+
+      document.querySelector('#video').addEventListener('input', () => {
+        let videoUrl = document.querySelector('#video').value;
+        if (videoUrl.startsWith('https://www.iwara.tv/video/')) {
+            let newVideoId = videoUrl.replace('https://www.iwara.tv/video/', '').split('/')[0];
+            setTimeout(() => {
+                document.querySelector('#video').value = newVideoId;
+            }, 200);
+        }
+    });
+
       
       // 为关闭按钮添加事件监听
-      closeButton.addEventListener('click', () => {
+      document.querySelector('#closeButton').addEventListener('click', () => {
         videoElement.pause(); // 停止播放视频
         videoElement.currentTime = 0; // 重置播放时间
         iframeContainer.style.display = 'none'; // 隐藏父容器
       });
 
       // 为下载按钮添加事件监听
-      downButton.addEventListener('click', () => {
+      document.querySelector('#downButton').addEventListener('click', () => {
         const link = document.createElement('a');
+        link.style.display = 'none';
         link.href = videoPlayUrl;
         link.style = 'z-index:1002';
         link.download = videoName;
+        document.body.appendChild(link);
         link.click();
+        swal("准备下载，请稍等!", {
+            icon: "success",
+            buttons: false,
+            timer: 1500,
+          });
+        document.body.removeChild(link);
+      });
+
+      document.querySelector('#saveButton').addEventListener('click', () => {
+        let data = localStorage.getItem('save') ? JSON.parse(localStorage.getItem('save')) : {};
+        data[playId] = videoName;
+        localStorage.setItem('save',JSON.stringify(data));
+        swal("收藏成功!", {
+            icon: "success",
+            buttons: false,
+            timer: 1500,
+          });
       });
 
       //判断两个时间戳之差是否超过一天
@@ -266,6 +397,27 @@ const html = `<!DOCTYPE HTML>
         const date2 = new Date(timestamp2);
         return Math.abs(date1 - date2) > 1000 * 60 * 60 * 24;
       }
+
+      // 复制文本到剪切板
+			async function copyLinkToClipboard() {
+				try {
+          let url = new URL(location.origin);
+          url.searchParams.set('id',document.querySelector('#video').value || 'Hvfo6PVnB9mnsD');
+          url.searchParams.set('quality',document.querySelector('select').value || '540');
+					await navigator.clipboard.writeText(url.href);
+          swal("链接已复制到剪切板！快去分享吧！", {
+            icon: "success",
+            buttons: false,
+            timer: 2000,
+          });
+				} catch (err) {
+          swal({
+              text: '复制失败，失败原因：'+err,
+              icon:'error',
+              button:'关闭'
+            });
+				}
+			}
 
       //获取从a到b的随机数
       function getRandomInt(a, b) {
@@ -302,12 +454,78 @@ const html = `<!DOCTYPE HTML>
       return objectArray[0].src.view;
   }
 
+     function getSaveVideos(data){
+      // 获取表格的tbody元素
+    const tbody = document.querySelector("#data-table tbody");
+ 
+    // 清空表格内容
+    tbody.innerHTML = "";
+ 
+    // 动态创建表格行
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const row = document.createElement("tr");
+ 
+            // 创建value单元格
+            const valueCell = document.createElement("td");
+            valueCell.textContent = data[key];
+            row.appendChild(valueCell);
+ 
+            // 创建按钮单元格
+            const buttonCell = document.createElement("td");
+            let button = document.createElement("button");
+            button.textContent = "播放";
+            button.style.cssText = "width:40%;height:100%;background: #33ccff;border-radius: 5px;color: #fff;border: none;";
+            button.addEventListener("click", () => {
+              document.querySelector('#video').value = key;
+              swal.close();
+              skip();
+            });
+            buttonCell.appendChild(button);
+
+            button = document.createElement("button");
+            button.textContent = "删除";
+            button.style.cssText = "margin-left:6px;width:40%;height:100%;background: #ff4665;border-radius: 5px;color: #fff;border: none;";
+            button.addEventListener("click", () => {
+                let isDelete = confirm('确认要删除'+data[key]+'吗？');
+                if(!isDelete) return;
+                delete data[key];
+                localStorage.setItem('save',JSON.stringify(data));
+                document.querySelector('#save').click();
+            });
+            buttonCell.appendChild(button);
+
+            row.appendChild(buttonCell);
+ 
+            // 将行添加到tbody中
+            tbody.appendChild(row);
+        }
+    }
+      swal({
+        content: document.querySelector("#data-table"),
+        buttons:{
+          clear: {
+                text: "清空收藏",
+                value: true
+            },
+          close: {
+                text: "关闭",
+                value: false
+            }
+        }
+      }).then((value)=>{
+        value ? localStorage.removeItem('save') : swal.close();
+      });
+
+      document.querySelector("#saveVideos").innerHTML = '<table id="data-table"><thead><tr><th>视频名称</th><th>操作</th></tr></thead><tbody></tbody></table>';
+     }
+
       //获取热门视频信息
       function getHots() {
         if(localStorage.getItem('hots') && !isMoreThanOneDay(parseInt(localStorage.getItem('ts')))){
           const results = JSON.parse(localStorage.getItem('hots'));
           document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
-          skip(1);
+          skip();
         }else{
             fetch('/view?url='+encodeURIComponent('https://api.iwara.tv/videos?rating=ecchi&sort=trending&limit=24'))
           .then(response => response.json())
@@ -316,30 +534,36 @@ const html = `<!DOCTYPE HTML>
             localStorage.setItem('hots',JSON.stringify(results));
             localStorage.setItem('ts',(new Date()).getTime());
             document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
-            skip(1);
+            skip();
           }).catch(err=>{
-            alert('出现错误：'+err);
+            swal({
+                text: '出现错误：'+err,
+                icon:'error',
+                button:'关闭'
+              });
           })
         }
       }
 
-      function skip(type) {
+      function skip() {
         const id = document.querySelector('#video').value || 'Hvfo6PVnB9mnsD';
         const patt = /^[0-9a-zA-Z]{9,}$/;
-      
+
         if (!id) {
           document.querySelector('#video').value = '';
           return;
-        } else if (!patt.test(id)) {
-          alert('视频ID格式不正确！');
+        }else if (!patt.test(id)) {
+          swal({
+              text: '视频ID格式不正确！',
+              icon:'error',
+              button:'关闭'
+            });
           document.querySelector('#video').value = '';
           return;
         }
 
-        if(type === 1){
-           //非直接跳转
-           videoQuality = document.querySelector('select').value;
-        }
+        videoQuality = document.querySelector('select').value;
+        playId = id;
       
         fetch('/video/' + id)
           .then(response => response.json())
@@ -354,6 +578,36 @@ const html = `<!DOCTYPE HTML>
             videoName = data.title + '.' + data.file.mime.replace('video/', '');
             const download = encodeURIComponent('Iwara - ' + data.title + ' [' + data.id + '].' + data.file.mime.replace('video/', ''));
       
+            //标题检查
+            if(data.title.search(/(NTR)/i) != -1){
+              let listener = setInterval(()=>{videoElement.pause();},300);
+              swal({
+                title:'温馨提示',
+                text:'该视频标题为'+data.title+'。检测到该视频标题含有NTR关键字，是否继续播放该视频？',
+                buttons:{
+                  cancel: {
+                    text: "播放",
+                    value: false,
+                    visible: true
+                  },
+                  confirm: {
+                    text: "不播放",
+                    value: true,
+                    visible: true
+                  }
+                }
+              }).then((status) => {
+                  clearInterval(listener1);
+                  clearInterval(listener);
+                  if (status) {
+                  document.querySelector('#closeButton').click();
+                  return;
+                  }else{
+                  videoElement.play();
+                }
+                });
+            }
+
             // 要哈希的字符串
             const inputString = id + "_" + fileExpires + "_5nFp9kmbNnHdAFhaqMvt";
       
@@ -377,10 +631,18 @@ const html = `<!DOCTYPE HTML>
                   videoElement.load();  // 加载视频
                   videoElement.play();  // 播放视频
                 })
-                .catch(err => alert('出现错误：' + err))
+                .catch(err => swal({
+                    text: '出现错误：'+err,
+                    icon:'error',
+                    button:'关闭'
+                  }))
             });
           })
-          .catch(error => alert('出现错误：' + error))
+          .catch(error => swal({
+              text: '出现错误：'+err,
+              icon:'error',
+              button:'关闭'
+            }))
       }
        </script>
      </body>
