@@ -1,4 +1,4 @@
-const html = `<!DOCTYPE HTML>
+ const html = `<!DOCTYPE HTML>
    <html>
      <head>
        <meta charset="utf-8" />
@@ -341,7 +341,7 @@ const html = `<!DOCTYPE HTML>
 
       document.querySelector('#hot').addEventListener('click', getHots);
 
-      document.querySelector('#share').addEventListener('click', copyLinkToClipboard);
+      document.querySelector('#share').addEventListener('click', ()=>{copyLinkToClipboard(null)});
 
       document.querySelector('#save').addEventListener('click', ()=>{getSaveVideos(JSON.parse(localStorage.getItem('save')));});
 
@@ -399,12 +399,16 @@ const html = `<!DOCTYPE HTML>
       }
 
       // 复制文本到剪切板
-			async function copyLinkToClipboard() {
-				try {
-          let url = new URL(location.origin);
-          url.searchParams.set('id',document.querySelector('#video').value || 'Hvfo6PVnB9mnsD');
-          url.searchParams.set('quality',document.querySelector('select').value || '540');
-					await navigator.clipboard.writeText(url.href);
+			async function copyLinkToClipboard(value) {
+				try { 
+          if(value){
+            await navigator.clipboard.writeText(value);
+          }else{
+            let url = new URL(location.origin);
+            url.searchParams.set('id',document.querySelector('#video').value || 'Hvfo6PVnB9mnsD');
+            url.searchParams.set('quality',document.querySelector('select').value || '540');       
+            await navigator.clipboard.writeText(url.href);
+          } 
           swal("链接已复制到剪切板！快去分享吧！", {
             icon: "success",
             buttons: false,
@@ -468,6 +472,7 @@ const html = `<!DOCTYPE HTML>
  
             // 创建value单元格
             const valueCell = document.createElement("td");
+            valueCell.dataset.id = key;
             valueCell.textContent = data[key];
             row.appendChild(valueCell);
  
@@ -476,7 +481,8 @@ const html = `<!DOCTYPE HTML>
             let button = document.createElement("button");
             button.textContent = "播放";
             button.style.cssText = "width:40%;height:100%;background: #33ccff;border-radius: 5px;color: #fff;border: none;";
-            button.addEventListener("click", () => {
+            button.addEventListener("click", (event) => {
+              event.stopPropagation();
               document.querySelector('#video').value = key;
               swal.close();
               skip();
@@ -486,7 +492,8 @@ const html = `<!DOCTYPE HTML>
             button = document.createElement("button");
             button.textContent = "删除";
             button.style.cssText = "margin-left:6px;width:40%;height:100%;background: #ff4665;border-radius: 5px;color: #fff;border: none;";
-            button.addEventListener("click", () => {
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
                 let isDelete = confirm('确认要删除'+data[key]+'吗？');
                 if(!isDelete) return;
                 delete data[key];
@@ -501,6 +508,15 @@ const html = `<!DOCTYPE HTML>
             tbody.appendChild(row);
         }
     }
+      
+    const rows = document.querySelectorAll("#data-table tbody tr");
+
+    rows.forEach(row => {
+        row.addEventListener("click", () => {
+            copyLinkToClipboard('https://www.iwara.tv/video/'+row.cells[0].dataset.id);
+        });
+    });
+
       swal({
         content: document.querySelector("#data-table"),
         buttons:{
@@ -518,6 +534,7 @@ const html = `<!DOCTYPE HTML>
       });
 
       document.querySelector("#saveVideos").innerHTML = '<table id="data-table"><thead><tr><th>视频名称</th><th>操作</th></tr></thead><tbody></tbody></table>';
+
      }
 
       //获取热门视频信息
@@ -528,8 +545,17 @@ const html = `<!DOCTYPE HTML>
           skip();
         }else{
             fetch('/view?url='+encodeURIComponent('https://api.iwara.tv/videos?rating=ecchi&sort=trending&limit=24'))
-          .then(response => response.json())
-          .then(data=>{
+          .then(response => {
+            if(!response.ok){
+            swal({
+                text: '热门视频信息获取失败，请再次尝试获取！',
+                icon:'error',
+                button:'关闭'
+              })
+          }else{
+             return response.json();
+          }
+        }).then(data=>{
             const results = data.results;
             localStorage.setItem('hots',JSON.stringify(results));
             localStorage.setItem('ts',(new Date()).getTime());
@@ -566,8 +592,17 @@ const html = `<!DOCTYPE HTML>
         playId = id;
       
         fetch('/video/' + id)
-          .then(response => response.json())
-          .then(data => {
+          .then(response =>{
+            if(!response.ok){
+              swal({
+                  text: '视频信息获取失败，请再次尝试获取！',
+                  icon:'error',
+                  button:'关闭'
+                })
+            }else{
+               return response.json();
+            }
+          }).then(data => {
             console.log(data);
             const filename = data.file.id + '_Source.' + data.file.mime.replace('video/', '');
             const path = encodeURIComponent(data.file.path);
@@ -616,8 +651,17 @@ const html = `<!DOCTYPE HTML>
       
               fetch(fileUrl.pathname + '?expires=' + fileExpires + '&hash=' + filehash + '&download=' + download,
                 { headers: { 'X-Version': hash } })
-                .then(response => response.json())
-                .then(data => {
+                .then(response => {
+                  if(!response.ok){
+                  swal({
+                      text: '视频播放资源获取失败，请再次尝试获取！',
+                      icon:'error',
+                      button:'关闭'
+                    })
+                }else{
+                   return response.json();
+                }
+              }).then(data => {
                   console.log(data);
                   const videoUrl = 'https:' + getVideoViewUrlByQuality(data, videoQuality);
                   console.log('获取视频链接：' + videoUrl);
@@ -639,7 +683,7 @@ const html = `<!DOCTYPE HTML>
             });
           })
           .catch(error => swal({
-              text: '出现错误：'+err,
+              text: '出现错误：'+error,
               icon:'error',
               button:'关闭'
             }))
