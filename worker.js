@@ -1,4 +1,4 @@
- const html = `<!DOCTYPE HTML>
+const html = `<!DOCTYPE HTML>
    <html>
      <head>
        <meta charset="utf-8" />
@@ -527,10 +527,21 @@
           close: {
                 text: "关闭",
                 value: false
-            }
+          }
         }
       }).then((value)=>{
-        value ? localStorage.removeItem('save') : swal.close();
+         if(value){
+          swal({
+            title:'温馨提示',
+            text:'清空收藏操作不可逆，是否清空收藏内容？',
+            icon:'info',
+            buttons:['取消','清空内容']
+            }).then((value)=>{
+            value ? localStorage.removeItem('save') : swal.close();
+           })
+         }else{
+           swal.close();
+         }
       });
 
       document.querySelector("#saveVideos").innerHTML = '<table id="data-table"><thead><tr><th>视频名称</th><th>操作</th></tr></thead><tbody></tbody></table>';
@@ -539,36 +550,72 @@
 
       //获取热门视频信息
       function getHots() {
-        if(localStorage.getItem('hots') && !isMoreThanOneDay(parseInt(localStorage.getItem('ts')))){
-          const results = JSON.parse(localStorage.getItem('hots'));
-          document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
-          skip();
-        }else{
-            fetch('/view?url='+encodeURIComponent('https://api.iwara.tv/videos?rating=ecchi&sort=trending&limit=24'))
-          .then(response => {
-            if(!response.ok){
-            swal({
-                text: '热门视频信息获取失败，请再次尝试获取！',
-                icon:'error',
-                button:'关闭'
-              })
-          }else{
-             return response.json();
-          }
-        }).then(data=>{
-            const results = data.results;
-            localStorage.setItem('hots',JSON.stringify(results));
-            localStorage.setItem('ts',(new Date()).getTime());
-            document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
-            skip();
-          }).catch(err=>{
-            swal({
-                text: '出现错误：'+err,
-                icon:'error',
-                button:'关闭'
-              });
+
+        let info,ts,type;
+
+        swal({
+            text: '随机热门视频分为普通和R18内容，您要随机播放哪种内容？',
+            icon:'info',
+            buttons:{
+                cancel: {
+                  text: "关闭",
+                  value: false,
+                  visible: true
+                },
+                r18: {
+                  text: "R18",
+                  value: 'R18',
+                  visible: true
+                },
+                general:{
+                  text:"普通",
+                  value:'General',
+                  visible:true
+                }
+              }
+          }).then((value)=>{
+                if(value === 'R18'){
+                    [info,ts,type] = ['hots','ts','ecchi'];
+                }else if(value === 'General'){
+                   [info,ts,type] = ['generalHots','generalTs','general'];
+                }else{
+                  return swal.close();
+                }
+
+                if(localStorage.getItem(info) && !isMoreThanOneDay(parseInt(localStorage.getItem(ts)))){
+                  const results = JSON.parse(localStorage.getItem(info));
+                  document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
+                  skip();
+                }else{
+                    fetch('/view?url='+encodeURIComponent('https://api.iwara.tv/videos?rating='+type+'&sort=trending&limit=24'))
+                  .then(response => {
+                    if(!response.ok){
+                    swal({
+                        text: '热门视频信息获取失败，请再次尝试获取！',
+                        icon:'error',
+                        button:'关闭'
+                      })
+                  }else{
+                     return response.json();
+                  }
+                }).then(data=>{
+                    const results = data.results;
+                    localStorage.setItem(info,JSON.stringify(results));
+                    localStorage.setItem(ts,(new Date()).getTime());
+                    document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
+                    skip();
+                  }).catch(err=>{
+                    swal({
+                        text: '出现错误：'+err,
+                        icon:'error',
+                        button:'关闭'
+                      });
+                  })
+                }
+
+
           })
-        }
+
       }
 
       function skip() {
@@ -631,10 +678,10 @@
                     visible: true
                   }
                 }
-              }).then((status) => {
+              }).then((value) => {
                   clearInterval(listener1);
                   clearInterval(listener);
-                  if (status) {
+                  if (value) {
                   document.querySelector('#closeButton').click();
                   return;
                   }else{
