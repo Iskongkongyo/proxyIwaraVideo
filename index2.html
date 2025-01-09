@@ -588,7 +588,7 @@
                   document.querySelector('#video').value = results[getRandomInt(0,results.length)]['id'];
                   skip();
                 }else{
-                    fetch('https://proxy.ixq.pp.ua/?url='+encodeURIComponent('https://api.iwara.tv/videos?rating='+type+'&sort=trending&limit=24'))
+                    fetch('https://这里填写反代域名/?url='+encodeURIComponent('https://api.iwara.tv/videos?rating='+type+'&sort=trending&limit=24'))
                   .then(response => {
                     if(!response.ok){
                     swal({
